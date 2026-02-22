@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useGuest } from '../context/GuestContext'
+import { useEffect } from 'react'
 
 export default function Confirmation() {
   const { state } = useLocation()
@@ -17,6 +18,16 @@ export default function Confirmation() {
     logout()
     navigate('/')
   }
+
+  useEffect(() => {
+
+    const timer = setTimeout(() => {
+      console.log("5 seconds have passed - execute action here!");
+      handleDone();
+    }, 5000);
+
+    
+  }, [])
 
   return (
     <div className="min-h-dvh flex flex-col bg-[#59A310]">
@@ -38,8 +49,8 @@ export default function Confirmation() {
       <div className="bg-[#f5f0e8] rounded-none px-8 pt-8 pb-10">
         <div className="max-w-sm mx-auto flex flex-col gap-5">
 
-          {/* Summary */}
-          <div className="bg-[#ede8dc] rounded-none divide-y divide-[#d9d3c7]">
+          {/* Summary - commented out for now */}
+          {/* <div className="bg-[#ede8dc] rounded-none divide-y divide-[#d9d3c7]">
             {orderId && (
               <div className="flex justify-between items-center px-4 py-3.5">
                 <span className="text-sm text-gray-500">Order</span>
@@ -56,22 +67,7 @@ export default function Confirmation() {
                 <span className="text-sm font-bold text-gray-900">₱{Number(total).toFixed(2)}</span>
               </div>
             )}
-          </div>
-
-          {/* Actions */}
-          <button
-            onClick={handleNewOrder}
-            className="w-full bg-[#59A310] text-white rounded-none py-4 text-base font-semibold transition-opacity active:opacity-80"
-          >
-            Order More
-          </button>
-          <button
-            onClick={handleDone}
-            className="w-full border-2 border-[#59A310] text-[#59A310] rounded-none py-4 text-base font-semibold transition-opacity active:opacity-70"
-          >
-            Done
-          </button>
-
+          </div> */}
         </div>
       </div>
 

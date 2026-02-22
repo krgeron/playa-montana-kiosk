@@ -49,16 +49,16 @@ export default function Menu() {
           <div className="flex flex-col gap-0.5">
             <div className="flex items-baseline gap-1.5">
               <span className="text-xs text-white/50 uppercase tracking-wide">Room</span>
-              <span className="text-xs font-bold text-white">{guest?.roomNumber}</span>
+              <span className="text-lg font-bold text-white">{guest?.roomNumber}</span>
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-xs text-white/50 uppercase tracking-wide">Last Name</span>
-              <span className="text-xs font-bold text-white">{guest?.lastName}</span>
+              <span className="text-lg font-bold text-white">{guest?.lastName}</span>
             </div>
             {guest?.mobile && (
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xs text-white/50 uppercase tracking-wide">Mobile</span>
-                <span className="text-xs font-bold text-white">{guest.mobile}</span>
+                <span className="text-lg font-bold text-white">{guest.mobile}</span>
               </div>
             )}
           </div>
