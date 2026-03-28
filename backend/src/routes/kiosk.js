@@ -44,4 +44,18 @@ router.post('/charge-booking', async (req, res) => {
   }
 })
 
+router.post('/uncharge-booking', async (req, res) => {
+  try {
+    const response = await fetch(`${BOOKING_APP_URL}/api/v1/kiosk/uncharge-booking`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body),
+    })
+    const data = await response.json()
+    res.status(response.status).json(data)
+  } catch (err) {
+    res.status(503).json({ error: 'Booking service unavailable' })
+  }
+})
+
 module.exports = router

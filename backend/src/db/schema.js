@@ -6,10 +6,12 @@ const CREATE_ORDERS = `
     guest_email TEXT,
     delivery_room TEXT,
     status TEXT NOT NULL DEFAULT 'pending'
-      CHECK(status IN ('pending', 'preparing', 'ready', 'served')),
+      CHECK(status IN ('pending', 'preparing', 'ready', 'served', 'cancelled')),
     total_amount DECIMAL(10,2) NOT NULL,
     notes TEXT,
     charged BOOLEAN NOT NULL DEFAULT 0,
+    invoice_id INTEGER,
+    invoice_item_ids TEXT,
     created_at DATETIME NOT NULL DEFAULT (datetime('now')),
     updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
   )

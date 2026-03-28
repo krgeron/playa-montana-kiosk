@@ -66,7 +66,7 @@ export default function useOrderStream() {
     })
 
     socket.on('order_updated', ({ orderId, status }) => {
-      if (status === 'served') {
+      if (status === 'served' || status === 'cancelled') {
         setOrders(prev => prev.filter(o => o.id !== orderId))
       } else {
         setOrders(prev => prev.map(o =>
@@ -89,10 +89,17 @@ export default function useOrderStream() {
         body: JSON.stringify({ status }),
       })
     } catch {
-      // Re-fetch to get actual state
       fetchOrders()
     }
   }, [fetchOrders])
 
-  return { orders, connected, newOrderAlert, updateStatus }
+  const cancelOrder = useCallback(async (orderId) => {
+    try {
+      await fetch(`/api/orders/${orderId}/cancel`, { method: 'POST' })
+    } catch {
+      fetchOrders()
+    }
+  }, [fetchOrders])
+
+  return { orders, connected, newOrderAlert, updateStatus, cancelOrder }
 }

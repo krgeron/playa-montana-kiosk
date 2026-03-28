@@ -1,6 +1,25 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import useOrderStream from '../hooks/useOrderStream'
 import OrderCard from '../components/OrderCard'
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(880, ctx.currentTime)
+    gain.gain.setValueAtTime(0.4, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
+    osc.start(ctx.currentTime)
+    osc.stop(ctx.currentTime + 0.4)
+    osc.onended = () => ctx.close()
+  } catch {
+    // Audio not available in this environment
+  }
+}
 
 const COLUMNS = [
   { key: 'pending', label: 'Pending', headerBg: 'bg-brand-400', dot: 'bg-brand-400' },
@@ -27,8 +46,7 @@ function Clock({ timeClass, dateClass }) {
 }
 
 export default function KitchenBoard() {
-  const { orders, connected, newOrderAlert, updateStatus } = useOrderStream()
-  const alertAudioRef = useRef(null)
+  const { orders, connected, newOrderAlert, updateStatus, cancelOrder } = useOrderStream()
 
   useEffect(() => {
     let wakeLock = null
@@ -55,17 +73,7 @@ export default function KitchenBoard() {
   }, [])
 
   useEffect(() => {
-    if (newOrderAlert) {
-      try {
-        if (!alertAudioRef.current) {
-          alertAudioRef.current = new Audio('/alert.mp3')
-        }
-        alertAudioRef.current.currentTime = 0
-        alertAudioRef.current.play().catch(() => {})
-      } catch {
-        // Audio not available
-      }
-    }
+    if (newOrderAlert) playBeep()
   }, [newOrderAlert])
 
   const grouped = {
@@ -125,6 +133,7 @@ export default function KitchenBoard() {
                     key={order.id}
                     order={order}
                     onStatusChange={updateStatus}
+                    onCancel={cancelOrder}
                     isNew={newOrderAlert === order.id}
                   />
                 ))

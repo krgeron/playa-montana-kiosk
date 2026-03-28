@@ -3,6 +3,32 @@ const { getDb } = require('../db')
 
 const ORDER_CAP = Number(process.env.ORDER_CAP || 5000)
 const DAILY_CAP = Number(process.env.DAILY_CAP || 15000)
+const BOOKING_APP_URL = process.env.BOOKING_APP_URL || 'http://localhost:3001'
+
+async function chargeToBooking(bookingId, items, notes) {
+  const payload = {
+    bookingId,
+    items: items.map(i => ({
+      description: i.itemName,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+    })),
+    notes,
+  }
+
+  const res = await fetch(`${BOOKING_APP_URL}/api/v1/kiosk/charge-booking`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`charge-booking failed (${res.status}): ${text}`)
+  }
+
+  return res.json()
+}
 
 router.post('/', (req, res) => {
   const { bookingId, guestName, guestEmail, deliveryRoom, items, notes } = req.body
@@ -75,6 +101,17 @@ router.post('/', (req, res) => {
     const { sendOrderConfirmation } = require('../email')
     sendOrderConfirmation(order, orderItems).catch(() => {})
 
+    // Charge to booking invoice — track result for potential rollback
+    chargeToBooking(bookingId, items, notes).then(charge => {
+      db.prepare(`
+        UPDATE orders
+        SET charged = 1, invoice_id = ?, invoice_item_ids = ?, updated_at = datetime('now')
+        WHERE id = ?
+      `).run(charge.invoiceId, JSON.stringify(charge.invoiceItemIds), orderId)
+    }).catch(err => {
+      console.error(`[charge-booking] Failed for order ${orderId}:`, err.message)
+    })
+
     res.status(201).json({ orderId: Number(orderId), total: totalAmount })
   } catch (err) {
     console.error('Failed to place order:', err)
@@ -117,6 +154,56 @@ router.get('/new', (req, res) => {
   }))
 
   res.json(result)
+})
+
+router.get('/:id', (req, res) => {
+  const { id } = req.params
+  const db = getDb()
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id)
+  if (!order) return res.status(404).json({ error: 'Order not found' })
+  const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(id)
+  res.json({ ...order, items })
+})
+
+router.post('/:id/cancel', async (req, res) => {
+  const { id } = req.params
+  const db = getDb()
+
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id)
+  if (!order) return res.status(404).json({ error: 'Order not found' })
+
+  if (!['pending', 'preparing'].includes(order.status)) {
+    return res.status(409).json({
+      error: 'not_cancellable',
+      message: `Order cannot be cancelled — it is already ${order.status}.`,
+    })
+  }
+
+  db.prepare(`
+    UPDATE orders SET status = 'cancelled', updated_at = datetime('now') WHERE id = ?
+  `).run(id)
+
+  const io = req.app.get('io')
+  io.emit('order_updated', { orderId: Number(id), status: 'cancelled' })
+
+  // Reverse the charge if it was applied
+  if (order.charged && order.invoice_id && order.invoice_item_ids) {
+    try {
+      const invoiceItemIds = JSON.parse(order.invoice_item_ids)
+      await fetch(`${BOOKING_APP_URL}/api/v1/kiosk/uncharge-booking`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: order.invoice_id, invoiceItemIds }),
+      }).then(r => {
+        if (!r.ok) throw new Error(`uncharge failed: ${r.status}`)
+      })
+    } catch (err) {
+      console.error(`[uncharge-booking] Failed for order ${id}:`, err.message)
+      // Order is still cancelled — staff must manually remove invoice items
+    }
+  }
+
+  res.json({ orderId: Number(id), status: 'cancelled' })
 })
 
 router.patch('/:id/status', (req, res) => {

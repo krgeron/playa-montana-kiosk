@@ -17,6 +17,7 @@ const STATUS_BORDER = {
   pending: 'border-l-brand-400',
   preparing: 'border-l-amber-400',
   ready: 'border-l-emerald-500',
+  cancelled: 'border-l-gray-300',
 }
 
 const ACTION_BG = {
@@ -33,15 +34,24 @@ function timeAgo(dateStr) {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m ago`
 }
 
-export default function OrderCard({ order, onStatusChange, isNew }) {
+export default function OrderCard({ order, onStatusChange, onCancel, isNew }) {
   const [updating, setUpdating] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
   const nextStatus = NEXT_STATUS[order.status]
+  const cancellable = ['pending', 'preparing'].includes(order.status)
 
   async function handleAdvance() {
     if (!nextStatus || updating) return
     setUpdating(true)
     await onStatusChange(order.id, nextStatus)
     setUpdating(false)
+  }
+
+  async function handleCancel() {
+    if (!cancellable || cancelling) return
+    setCancelling(true)
+    await onCancel(order.id)
+    setCancelling(false)
   }
 
   return (
@@ -92,18 +102,30 @@ export default function OrderCard({ order, onStatusChange, isNew }) {
         </div>
       )}
 
-      {/* Action */}
-      {nextStatus && (
-        <button
-          onClick={handleAdvance}
-          disabled={updating}
-          className={`w-full font-bold text-white rounded-lg py-3 text-[0.875rem] uppercase tracking-[0.02em] transition-all active:scale-[0.98] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-            ACTION_BG[order.status] ?? 'bg-gray-600'
-          }`}
-        >
-          {updating ? 'Updating...' : ACTION_LABELS[order.status]}
-        </button>
-      )}
+      {/* Actions */}
+      <div className="flex gap-2">
+        {nextStatus && (
+          <button
+            onClick={handleAdvance}
+            disabled={updating || cancelling}
+            className={`flex-1 font-bold text-white rounded-lg py-3 text-[0.875rem] uppercase tracking-[0.02em] transition-all active:scale-[0.98] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+              ACTION_BG[order.status] ?? 'bg-gray-600'
+            }`}
+          >
+            {updating ? 'Updating...' : ACTION_LABELS[order.status]}
+          </button>
+        )}
+        {cancellable && (
+          <button
+            onClick={handleCancel}
+            disabled={updating || cancelling}
+            className="px-4 py-3 rounded-lg border border-red-200 text-red-500 text-[0.875rem] font-medium hover:bg-red-50 active:bg-red-100 disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+            title="Cancel order"
+          >
+            {cancelling ? '...' : '✕'}
+          </button>
+        )}
+      </div>
     </div>
   )
 }

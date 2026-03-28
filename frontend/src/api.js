@@ -45,4 +45,10 @@ async function placeOrder({ bookingId, guestName, guestEmail, deliveryRoom, item
   return data
 }
 
-export { validateGuest, validateToken, fetchMenu, placeOrder }
+async function fetchOrder(orderId) {
+  const res = await fetch(`${BASE}/orders/${orderId}`)
+  if (!res.ok) throw new Error('Order not found')
+  return res.json()
+}
+
+export { validateGuest, validateToken, fetchMenu, placeOrder, fetchOrder }

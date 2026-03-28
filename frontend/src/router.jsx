@@ -8,6 +8,8 @@ import Confirmation from './pages/Confirmation'
 
 const KitchenBoard = lazy(() => import('./pages/KitchenBoard'))
 const TokenAuth = lazy(() => import('./pages/TokenAuth'))
+const OrderStatus = lazy(() => import('./pages/OrderStatus'))
+const ReadyDisplay = lazy(() => import('./pages/ReadyDisplay'))
 
 function ProtectedRoute() {
   const { guest } = useGuest()
@@ -34,6 +36,8 @@ const router = createBrowserRouter([
     ],
   },
   { path: '/kitchen', element: <Suspense fallback={<LazyFallback />}><KitchenBoard /></Suspense> },
+  { path: '/ready', element: <Suspense fallback={<LazyFallback />}><ReadyDisplay /></Suspense> },
+  { path: '/status/:orderId', element: <Suspense fallback={<LazyFallback />}><OrderStatus /></Suspense> },
   { path: '/order', element: <Suspense fallback={<LazyFallback />}><TokenAuth /></Suspense> },
   { path: '*', element: <Navigate to="/" replace /> },
 ])

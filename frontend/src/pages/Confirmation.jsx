@@ -78,6 +78,15 @@ export default function Confirmation() {
             )}
           </div>
 
+          {orderId && (
+            <button
+              onClick={() => { setPaused(true); navigate(`/status/${orderId}`) }}
+              className="w-full bg-emerald-500 text-white rounded-lg font-bold text-[0.9375rem] uppercase tracking-[0.02em] py-3.5 active:opacity-80 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2"
+            >
+              Track My Order
+            </button>
+          )}
+
           <div className="flex gap-3">
             <button
               onClick={handleNewOrder}
