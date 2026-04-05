@@ -2,7 +2,7 @@ const Database = require('better-sqlite3')
 const path = require('path')
 const { CREATE_ORDERS, CREATE_ORDER_ITEMS } = require('./schema')
 
-const DB_PATH = path.join(__dirname, '..', '..', 'database.sqlite')
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', '..', 'database.sqlite')
 let db
 
 function migrateDatabase(db) {

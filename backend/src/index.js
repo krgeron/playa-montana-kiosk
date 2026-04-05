@@ -3,6 +3,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../.env') })
 const express = require('express')
 const cors = require('cors')
 const http = require('http')
+const path = require('path')
 const { Server } = require('socket.io')
 const { initDatabase } = require('./db')
 
@@ -24,6 +25,14 @@ app.use('/api/kiosk', require('./routes/kiosk'))
 require('./socket')(io)
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }))
+
+// Serve built frontend static files (production only)
+const publicDir = path.join(__dirname, '../public')
+app.use(express.static(publicDir))
+// SPA fallback — return index.html for all non-API routes
+app.get('/{*splat}', (req, res) => {
+  res.sendFile(path.join(publicDir, 'index.html'))
+})
 
 const PORT = process.env.PORT || 3004
 const MENU_APP_URL = (process.env.MENU_APP_URL || 'http://localhost:3002').replace(/\/$/, '')
